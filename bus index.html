@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학교 프로젝트 - 버스 경로 검색기 (즐겨찾기 포함)</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', sans-serif;
+            padding: 20px;
+            background-color: #f0f2f5;
+        }
+        .search-container {
+            background-color: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            max-width: 450px;
+            margin: 30px auto;
+        }
+        h2, h3 {
+            text-align: center;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: #555;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            color: white;
+        }
+        .search-btn { background-color: #28a745; }
+        .search-btn:hover { background-color: #218838; }
+        .bookmark-btn { background-color: #ffc107; color: #333; }
+        .bookmark-btn:hover { background-color: #e0a800; }
+        
+        #result {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-left: 5px solid #28a745;
+            border-radius: 4px;
+            display: none;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        /* 즐겨찾기 목록 스타일 */
+        .bookmark-section {
+            border-top: 1px solid #ddd;
+            padding-top: 15px;
+        }
+        .bookmark-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .bookmark-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f1f3f5;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .bookmark-text {
+            cursor: pointer;
+            color: #007bff;
+            font-weight: bold;
+            flex-grow: 1;
+        }
+        .bookmark-text:hover {
+            text-decoration: underline;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 4px 8px;
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            border: none;
+        }
+        .delete-btn:hover { background-color: #bd2130; }
+        .empty-msg {
+            color: #888;
+            text-align: center;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="search-container">
+    <h2>🚌 버스 경로 검색기</h2>
+    
+    <div class="input-group">
+        <label for="start">출발지 입력</label>
+        <input type="text" id="start" placeholder="예: 서울역, 학교">
+    </div>
+    
+    <div class="input-group">
+        <label for="end">목적지 입력</label>
+        <input type="text" id="end" placeholder="예: 강남역, 서면역">
+    </div>
+    
+    <div class="btn-group">
+        <button class="search-btn" onclick="findBusRoute()">경로 검색</button>
+        <button class="bookmark-btn" onclick="addBookmark()">⭐ 즐겨찾기 등록</button>
+    </div>
+
+    <div id="result"></div>
+
+    <div class="bookmark-section">
+        <h3>⭐ 나의 즐겨찾기 경로</h3>
+        <ul id="bookmarkList" class="bookmark-list">
+            </ul>
+    </div>
+</div>
+
+<script>
+    // 📌 수동 데이터 사전 (원하는 만큼 수정/추가 하세요!)
+    const routeData = [
+        { start: "서울역", end: "강남역", bus: "9401번", dropOff: "신논현역" },
+        { start: "학교", end: "서면역", bus: "10번", dropOff: "롯데백화점" },
+        { start: "홍대", end: "신촌", bus: "7737번", dropOff: "신촌오거리" }
+    ];
+
+    // 페이지가 처음 켜질 때 저장되어 있던 즐겨찾기 불러오기
+    window.onload = function() {
+        displayBookmarks();
+    };
+
+    // 1. 경로 검색 함수
+    function findBusRoute() {
+        const startInput = document.getElementById('start').value.trim();
+        const endInput = document.getElementById('end').value.trim();
+        const resultDiv = document.getElementById('result');
+
+        if (!startInput || !endInput) {
+            alert('출발지와 목적지를 모두 입력해주세요.');
+            return;
+        }
+
+        const foundRoute = routeData.find(route => route.start === startInput && route.end === endInput);
+        resultDiv.style.display = 'block';
+
+        if (foundRoute) {
+            resultDiv.innerHTML = `
+                🎉 <strong>경로를 찾았습니다!</strong><br><br>
+                📍 <strong>출발지:</strong> ${foundRoute.start}<br>
+                🚌 <strong>탑승 버스:</strong> <span style="color:#28a745;">${foundRoute.bus}</span><br>
+                🛑 <strong>하차 정류장:</strong> '${foundRoute.dropOff}'<br>
+                🏁 <strong>목적지:</strong> ${foundRoute.end}
+            `;
+        } else {
+            resultDiv.innerHTML = `<span style="color:#dc3545; font-weight:bold;">❌ 등록되지 않은 경로입니다.</span>`;
+        }
+    }
+
+    // 2. 즐겨찾기 등록 함수
+    function addBookmark() {
+        const startInput = document.getElementById('start').value.trim();
+        const endInput = document.getElementById('end').value.trim();
+
+        if (!startInput || !endInput) {
+            alert('출발지와 목적지를 먼저 입력한 후 등록해주세요!');
+            return;
+        }
+
+        // 브라우저 저장소(localStorage)에서 기존 즐겨찾기 리스트 가져오기
+        let bookmarks = JSON.parse(localStorage.getItem('busBookmarks')) || [];
+
+        // 이미 똑같은 경로가 저장되어 있는지 확인
+        const isExist = bookmarks.some(b => b.start === startInput && b.end === endInput);
+        if (isExist) {
+            alert('이미 즐겨찾기에 등록된 경로입니다.');
+            return;
+        }
+
+        // 새로운 즐겨찾기 추가
+        bookmarks.push({ start: startInput, end: endInput });
+        localStorage.setItem('busBookmarks', JSON.stringify(bookmarks));
+
+        // 목록 새로고침
+        displayBookmarks();
+        alert('즐겨찾기에 등록되었습니다!');
+    }
+
+    // 3. 즐겨찾기 목록 화면에 그려주는 함수
+    function displayBookmarks() {
+        const bookmarkListUl = document.getElementById('bookmarkList');
+        let bookmarks = JSON.parse(localStorage.getItem('busBookmarks')) || [];
+
+        bookmarkListUl.innerHTML = ''; // 기존 목록 초기화
+
+        if (bookmarks.length === 0) {
+            bookmarkListUl.innerHTML = '<li class="empty-msg">등록된 즐겨찾기가 없습니다.</li>';
+            return;
+        }
+
+        bookmarks.forEach((bookmark, index) => {
+            const li = document.createElement('li');
+            li.className = 'bookmark-item';
+            
+            li.innerHTML = `
+                <span class="bookmark-text" onclick="loadBookmark('${bookmark.start}', '${bookmark.end}')">
+                    📍 ${bookmark.start} ➔ 🏁 ${bookmark.end}
+                </span>
+                <button class="delete-btn" onclick="deleteBookmark(${index})">삭제</button>
+            `;
+            bookmarkListUl.appendChild(li);
+        });
+    }
+
+    // 4. 즐겨찾기 클릭 시 입력창에 자동으로 값을 넣어주는 함수
+    function loadBookmark(start, end) {
+        document.getElementById('start').value = start;
+        document.getElementById('end').value = end;
+        findBusRoute(); // 자동으로 검색까지 실행
+    }
+
+    // 5. 즐겨찾기 삭제 함수
+    function deleteBookmark(index) {
+        let bookmarks = JSON.parse(localStorage.getItem('busBookmarks')) || [];
+        bookmarks.splice(index, 1); // 해당 순서의 데이터 삭제
+        localStorage.setItem('busBookmarks', JSON.stringify(bookmarks));
+        displayBookmarks(); // 목록 새로고침
+    }
+</script>
+
+</body>
+</html>
